@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Snake 2 Jogadores</title>
+  <style>
+    body {
+      background-color: #111;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      color: #fff;
+      font-family: monospace;
+      overflow: hidden; /* evita rolagem */
+    }
+    canvas {
+      background: #000;
+      border: 2px solid #00ff00;
+    }
+    h1 {
+      color: #0f0;
+      margin-bottom: 10px;
+    }
+    #reiniciar {
+      margin-top: 15px;
+      background: #0f0;
+      color: #000;
+      border: none;
+      padding: 8px 15px;
+      font-weight: bold;
+      cursor: pointer;
+      border-radius: 5px;
+      display: none;
+    }
+    #reiniciar:hover {
+      background: #2fff2f;
+    }
+  </style>
+</head>
+<body>
+  <h1>🐍 Snake poggers 🐍</h1>
+  <canvas id="game" width="600" height="600"></canvas>
+  <button id="reiniciar">Reiniciar Jogo</button>
+
+  <script>
+    const canvas = document.getElementById("game");
+    const ctx = canvas.getContext("2d");
+    const restartBtn = document.getElementById("reiniciar");
+
+    const box = 20; // tamanho do quadrado
+    const rows = canvas.height / box;
+    const cols = canvas.width / box;
+
+    let snake1, snake2, dir1, dir2, food, color1, color2, game;
+
+    
+    function iniciarJogo() {
+      snake1 = [{ x: 5 * box, y: 5 * box }];
+      dir1 = "RIGHT";
+      color1 = "#00ff00";
+
+      snake2 = [{ x: 25 * box, y: 25 * box }];
+      dir2 = "LEFT";
+      color2 = "#00ffff";
+
+      food = gerarComida();
+      restartBtn.style.display = "none";
+
+      if (game) clearInterval(game);
+      game = setInterval(draw, 100);
+    }
+
+    // Evita a tela rolar ao usar setas
+    window.addEventListener("keydown", (event) => {
+      const keysToPrevent = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " "];
+      if (keysToPrevent.includes(event.key)) event.preventDefault();
+
+      // Jogador 1 (WASD)
+      if (event.key === "w" && dir1 !== "DOWN") dir1 = "UP";
+      else if (event.key === "s" && dir1 !== "UP") dir1 = "DOWN";
+      else if (event.key === "a" && dir1 !== "RIGHT") dir1 = "LEFT";
+      else if (event.key === "d" && dir1 !== "LEFT") dir1 = "RIGHT";
+
+      // Jogador 2 (Setas)
+      if (event.key === "ArrowUp" && dir2 !== "DOWN") dir2 = "UP";
+      else if (event.key === "ArrowDown" && dir2 !== "UP") dir2 = "DOWN";
+      else if (event.key === "ArrowLeft" && dir2 !== "RIGHT") dir2 = "LEFT";
+      else if (event.key === "ArrowRight" && dir2 !== "LEFT") dir2 = "RIGHT";
+    });
+
+    function gerarComida() {
+      return {
+        x: Math.floor(Math.random() * cols) * box,
+        y: Math.floor(Math.random() * rows) * box,
+      };
+    }
+
+    function drawSquare(x, y, color) {
+      ctx.fillStyle = color;
+      ctx.fillRect(x, y, box, box);
+      ctx.strokeStyle = "#111";
+      ctx.strokeRect(x, y, box, box);
+    }
+
+    function updateSnake(snake, dir) {
+      let headX = snake[0].x;
+      let headY = snake[0].y;
+      if (dir === "LEFT") headX -= box;
+      if (dir === "RIGHT") headX += box;
+      if (dir === "UP") headY -= box;
+      if (dir === "DOWN") headY += box;
+      return { x: headX, y: headY };
+    }
+
+    function checkCollision(head, snake) {
+      return snake.some(seg => seg.x === head.x && seg.y === head.y);
+    }
+
+    function gameOver(player) {
+      clearInterval(game);
+      ctx.fillStyle = "red";
+      ctx.font = "40px monospace";
+      ctx.fillText(`${player} perdeu!`, 180, 300);
+      restartBtn.style.display = "block";
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawSquare(food.x, food.y, "red");
+
+      
+      let newHead1 = updateSnake(snake1, dir1);
+      let newHead2 = updateSnake(snake2, dir2);
+
+      
+      if (newHead1.x < 0 || newHead1.x >= canvas.width || newHead1.y < 0 || newHead1.y >= canvas.height)
+        return gameOver("Jogador 1");
+      if (newHead2.x < 0 || newHead2.x >= canvas.width || newHead2.y < 0 || newHead2.y >= canvas.height)
+        return gameOver("Jogador 2");
+
+      
+      if (checkCollision(newHead1, snake1)) return gameOver("Jogador 1");
+      if (checkCollision(newHead2, snake2)) return gameOver("Jogador 2");
+
+      
+      if (checkCollision(newHead1, snake2)) return gameOver("Jogador 1");
+      if (checkCollision(newHead2, snake1)) return gameOver("Jogador 2");
+
+      
+      if (newHead1.x === food.x && newHead1.y === food.y) {
+        food = gerarComida();
+      } else {
+        snake1.pop();
+      }
+
+      if (newHead2.x === food.x && newHead2.y === food.y) {
+        food = gerarComida();
+      } else {
+        snake2.pop();
+      }
+
+      snake1.unshift(newHead1);
+      snake2.unshift(newHead2);
+
+      
+      snake1.forEach(seg => drawSquare(seg.x, seg.y, color1));
+      snake2.forEach(seg => drawSquare(seg.x, seg.y, color2));
+    }
+
+    restartBtn.addEventListener("click", iniciarJogo);
+
+    iniciarJogo();
+  </script>
+</body>
+</html>
